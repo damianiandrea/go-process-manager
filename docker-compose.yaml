@@ -1,0 +1,83 @@
+version: "3.8"
+
+services:
+  orchestrator:
+    build:
+      context: ./orchestrator
+    image: orchestrator:latest
+    container_name: orchestrator
+    networks:
+      - process-manager-net
+    depends_on:
+      - nats
+    ports:
+      - "6000:6000"
+    environment:
+      - "SERVER_ADDR=:6000"
+      - "NATS_ADDR=nats://nats:4222"
+    deploy:
+      restart_policy:
+        condition: on-failure
+  agent-1:
+    build:
+      context: ./agent
+    image: agent:latest
+    container_name: agent-1
+    networks:
+      - process-manager-net
+    depends_on:
+      - nats
+    ports:
+      - "7000:7000"
+    environment:
+      - "SERVER_ADDR=:7000"
+      - "NATS_ADDR=nats://nats:4222"
+    deploy:
+      restart_policy:
+        condition: on-failure
+  agent-2:
+    build:
+      context: ./agent
+    image: agent:latest
+    container_name: agent-2
+    networks:
+      - process-manager-net
+    depends_on:
+      - nats
+    ports:
+      - "7001:7001"
+    environment:
+      - "SERVER_ADDR=:7001"
+      - "NATS_ADDR=nats://nats:4222"
+    deploy:
+      restart_policy:
+        condition: on-failure
+  nats:
+    image: nats
+    container_name: nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: "--cluster_name NATS --cluster nats://0.0.0.0:6222 --http_port 8222"
+    networks:
+      - process-manager-net
+  nats-1:
+    image: nats
+    container_name: nats-1
+    command: "--cluster_name NATS --cluster nats://0.0.0.0:6222 --routes=nats://ruser:T0pS3cr3t@nats:6222"
+    networks:
+      - process-manager-net
+    depends_on:
+      - nats
+  nats-2:
+    image: nats
+    container_name: nats-2
+    command: "--cluster_name NATS --cluster nats://0.0.0.0:6222 --routes=nats://ruser:T0pS3cr3t@nats:6222"
+    networks:
+      - process-manager-net
+    depends_on:
+      - nats
+
+networks:
+  process-manager-net:
+    driver: bridge

@@ -1,0 +1,10 @@
+version: '3'
+
+tasks:
+  run:
+    cmds:
+      - docker-compose up --build
+  stop:
+    cmds:
+      - docker-compose down -v --remove-orphans
+      - echo "y" | docker image prune
