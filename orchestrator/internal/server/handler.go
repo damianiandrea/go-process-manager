@@ -13,18 +13,18 @@ var (
 	ErrInvalidRequestBody = errors.New("invalid request body")
 )
 
-type execProcessHandler struct {
-	execProcessMsgProducer message.ExecProcessMsgProducer
+type runProcessHandler struct {
+	runProcessMsgProducer message.RunProcessMsgProducer
 }
 
-func newExecProcessHandler(producer message.ExecProcessMsgProducer) *execProcessHandler {
-	return &execProcessHandler{execProcessMsgProducer: producer}
+func newRunProcessHandler(producer message.RunProcessMsgProducer) *runProcessHandler {
+	return &runProcessHandler{runProcessMsgProducer: producer}
 }
 
-func (h *execProcessHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *runProcessHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		h.execProcess(w, r)
+		h.runProcess(w, r)
 	default:
 		setAllowHeader(w, http.MethodOptions, http.MethodPost)
 		if r.Method == http.MethodOptions {
@@ -35,15 +35,15 @@ func (h *execProcessHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *execProcessHandler) execProcess(w http.ResponseWriter, r *http.Request) {
-	request := &ExecProcessRequest{}
+func (h *runProcessHandler) runProcess(w http.ResponseWriter, r *http.Request) {
+	request := &RunProcessRequest{}
 	if err := json.NewDecoder(r.Body).Decode(request); err != nil {
 		writeJsonError(w, http.StatusBadRequest, ErrInvalidRequestBody)
 		return
 	}
 
-	execProcessMsg := &message.ExecProcess{ProcessName: request.ProcessName}
-	if err := h.execProcessMsgProducer.Produce(r.Context(), execProcessMsg); err != nil {
+	runProcessMsg := &message.RunProcess{ProcessName: request.ProcessName, Args: request.Args}
+	if err := h.runProcessMsgProducer.Produce(r.Context(), runProcessMsg); err != nil {
 		writeJsonError(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -51,8 +51,9 @@ func (h *execProcessHandler) execProcess(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusAccepted)
 }
 
-type ExecProcessRequest struct {
-	ProcessName string `json:"process_name"`
+type RunProcessRequest struct {
+	ProcessName string   `json:"process_name"`
+	Args        []string `json:"args"`
 }
 
 type healthHandler struct {

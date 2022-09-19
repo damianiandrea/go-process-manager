@@ -33,16 +33,16 @@ func New(options ...Option) (*server, error) {
 		opt(s)
 	}
 
-	var msgProducer message.ExecProcessMsgProducer
+	var msgProducer message.RunProcessMsgProducer
 	if s.natsClient != nil {
-		msgProducer = nats.NewExecProcessMsgProducer(s.natsClient)
+		msgProducer = nats.NewRunProcessMsgProducer(s.natsClient)
 	} else {
 		return nil, ErrNoMsgProducer
 	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/health", recoverer(&healthHandler{}))
-	mux.Handle("/v1/processes/exec", recoverer(newExecProcessHandler(msgProducer)))
+	mux.Handle("/v1/processes/run", recoverer(newRunProcessHandler(msgProducer)))
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 

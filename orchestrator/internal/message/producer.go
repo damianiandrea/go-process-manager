@@ -2,10 +2,11 @@ package message
 
 import "context"
 
-type ExecProcessMsgProducer interface {
-	Produce(ctx context.Context, execProcess *ExecProcess) error
+type RunProcessMsgProducer interface {
+	Produce(ctx context.Context, run *RunProcess) error
 }
 
-type ExecProcess struct {
-	ProcessName string `json:"process_name"`
+type RunProcess struct {
+	ProcessName string   `json:"process_name"`
+	Args        []string `json:"args"`
 }
