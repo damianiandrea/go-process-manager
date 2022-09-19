@@ -15,7 +15,7 @@ import (
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/message/nats"
 )
 
-var ErrNoMsgProducer = errors.New("no message producer")
+var ErrNoMsgPlatform = errors.New("no message platform")
 
 type server struct {
 	ctx    context.Context
@@ -23,7 +23,8 @@ type server struct {
 	addr   string
 	server *http.Server
 
-	natsClient *nats.Client
+	natsClient            *nats.Client
+	runProcessMsgProducer message.RunProcessMsgProducer
 }
 
 func New(options ...Option) (*server, error) {
@@ -33,16 +34,15 @@ func New(options ...Option) (*server, error) {
 		opt(s)
 	}
 
-	var msgProducer message.RunProcessMsgProducer
 	if s.natsClient != nil {
-		msgProducer = nats.NewRunProcessMsgProducer(s.natsClient)
+		s.runProcessMsgProducer = nats.NewRunProcessMsgProducer(s.natsClient)
 	} else {
-		return nil, ErrNoMsgProducer
+		return nil, ErrNoMsgPlatform
 	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/health", recoverer(&healthHandler{}))
-	mux.Handle("/v1/processes/run", recoverer(newRunProcessHandler(msgProducer)))
+	mux.Handle("/v1/processes/run", recoverer(newRunProcessHandler(s.runProcessMsgProducer)))
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
