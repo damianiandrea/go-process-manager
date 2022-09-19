@@ -53,7 +53,7 @@ func (h *runProcessHandler) runProcess(w http.ResponseWriter, r *http.Request) {
 
 type RunProcessRequest struct {
 	ProcessName string   `json:"process_name"`
-	Args        []string `json:"args"`
+	Args        []string `json:"args,omitempty"`
 }
 
 type healthHandler struct {

@@ -8,5 +8,5 @@ type RunProcessMsgProducer interface {
 
 type RunProcess struct {
 	ProcessName string   `json:"process_name"`
-	Args        []string `json:"args"`
+	Args        []string `json:"args,omitempty"`
 }
