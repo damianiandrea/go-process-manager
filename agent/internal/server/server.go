@@ -8,15 +8,18 @@ import (
 	"net/http"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/damianiandrea/go-process-manager/agent/internal/message"
 	"github.com/damianiandrea/go-process-manager/agent/internal/message/nats"
+	"github.com/damianiandrea/go-process-manager/agent/internal/process"
 	"github.com/damianiandrea/go-process-manager/agent/internal/process/local"
+	"github.com/damianiandrea/go-process-manager/agent/internal/scheduler"
 )
 
-var ErrNoMsgConsumer = errors.New("no message consumer")
+var ErrNoMsgPlatform = errors.New("no message platform")
 
 type server struct {
 	ctx    context.Context
@@ -24,8 +27,14 @@ type server struct {
 	addr   string
 	server *http.Server
 
-	natsClient  *nats.Client
-	msgConsumer message.ExecProcessMsgConsumer
+	processManager process.Manager
+
+	natsClient                      *nats.Client
+	runProcessMsgConsumer           message.RunProcessMsgConsumer
+	listRunningProcessesMsgProducer message.ListRunningProcessesMsgProducer
+
+	heartRate          time.Duration
+	heartbeatScheduler *scheduler.HeartbeatScheduler
 }
 
 func New(options ...Option) (*server, error) {
@@ -35,11 +44,17 @@ func New(options ...Option) (*server, error) {
 		opt(s)
 	}
 
+	s.processManager = local.NewProcessManager()
+
 	if s.natsClient != nil {
-		s.msgConsumer = nats.NewExecProcessMsgConsumer(s.natsClient, &local.ProcessExecutor{})
+		s.runProcessMsgConsumer = nats.NewRunProcessMsgConsumer(s.natsClient, s.processManager)
+		s.listRunningProcessesMsgProducer = nats.NewListRunningProcessesMsgProducer(s.natsClient)
 	} else {
-		return nil, ErrNoMsgConsumer
+		return nil, ErrNoMsgPlatform
 	}
+
+	s.heartbeatScheduler = scheduler.NewHeartbeatScheduler(s.heartRate, s.processManager,
+		s.listRunningProcessesMsgProducer)
 
 	mux := http.NewServeMux()
 	mux.Handle("/health", recoverer(&healthHandler{}))
@@ -69,7 +84,12 @@ func (s *server) Run() error {
 
 	group.Go(func() error {
 		log.Println("ready to consume messages...")
-		return s.msgConsumer.Consume(groupCtx)
+		return s.runProcessMsgConsumer.Consume(groupCtx)
+	})
+
+	group.Go(func() error {
+		log.Println("heart is beating...")
+		return s.heartbeatScheduler.Beat(groupCtx)
 	})
 
 	group.Go(func() error {
@@ -103,5 +123,15 @@ func WithNats(addr string) Option {
 			panic(err)
 		}
 		s.natsClient = client
+	}
+}
+
+func WithHeartRate(rate string) Option {
+	return func(s *server) {
+		parsed, err := time.ParseDuration(rate)
+		if err != nil {
+			panic(err)
+		}
+		s.heartRate = parsed
 	}
 }

@@ -10,10 +10,12 @@ import (
 func main() {
 	addr := getenv("SERVER_ADDR", ":7000")
 	nats := getenv("NATS_ADDR", "nats://127.0.0.1:4222")
+	rate := getenv("HEART_RATE", "5s")
 
 	s, err := server.New(
 		server.WithAddr(addr),
 		server.WithNats(nats),
+		server.WithHeartRate(rate),
 	)
 	if err != nil {
 		log.Fatalf("could not create server: %v\n", err)

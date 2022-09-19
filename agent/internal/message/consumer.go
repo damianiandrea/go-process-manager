@@ -2,10 +2,11 @@ package message
 
 import "context"
 
-type ExecProcessMsgConsumer interface {
+type RunProcessMsgConsumer interface {
 	Consume(ctx context.Context) error
 }
 
-type ExecProcess struct {
-	ProcessName string `json:"process_name"`
+type RunProcess struct {
+	ProcessName string   `json:"process_name"`
+	Args        []string `json:"args"`
 }

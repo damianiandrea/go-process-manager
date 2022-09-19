@@ -11,19 +11,19 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-type ExecProcessMsgConsumer struct {
-	client   *Client
-	executor process.Executor
+type RunProcessMsgConsumer struct {
+	client         *Client
+	processManager process.Manager
 }
 
-func NewExecProcessMsgConsumer(client *Client, executor process.Executor) *ExecProcessMsgConsumer {
-	return &ExecProcessMsgConsumer{client: client, executor: executor}
+func NewRunProcessMsgConsumer(client *Client, processManager process.Manager) *RunProcessMsgConsumer {
+	return &RunProcessMsgConsumer{client: client, processManager: processManager}
 }
 
-func (c *ExecProcessMsgConsumer) Consume(ctx context.Context) error {
+func (c *RunProcessMsgConsumer) Consume(ctx context.Context) error {
 	ch := make(chan *nats.Msg, 64)
 	defer close(ch)
-	sub, err := c.client.conn.ChanQueueSubscribe("process.exec", "agent", ch)
+	sub, err := c.client.conn.ChanQueueSubscribe("process.run", "agent", ch)
 	if err != nil {
 		return err
 	}
@@ -31,17 +31,18 @@ func (c *ExecProcessMsgConsumer) Consume(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
+			log.Printf("unsubscribing and draining messages: %v", ctx.Err())
 			return sub.Drain()
-		case execProcessMsg := <-ch:
-			data := execProcessMsg.Data
+		case msg := <-ch:
+			data := msg.Data
 			log.Printf("received message: %v", string(data))
-			execProcess := &message.ExecProcess{}
-			if err = json.NewDecoder(bytes.NewReader(data)).Decode(execProcess); err != nil {
+			run := &message.RunProcess{}
+			if err = json.NewDecoder(bytes.NewReader(data)).Decode(run); err != nil {
 				log.Printf("could not decode message: %v", err)
 				continue
 			}
-			if err = c.executor.Exec(&process.Process{Name: execProcess.ProcessName}); err != nil {
-				log.Printf("could not execute process: %v", err)
+			if err = c.processManager.Run(run.ProcessName, run.Args...); err != nil {
+				log.Printf("could not run process: %v", err)
 			}
 		}
 	}

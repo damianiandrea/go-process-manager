@@ -32,6 +32,7 @@ services:
     environment:
       - "SERVER_ADDR=:7000"
       - "NATS_ADDR=nats://nats:4222"
+      - "HEART_RATE=5s"
     deploy:
       restart_policy:
         condition: on-failure
@@ -49,6 +50,7 @@ services:
     environment:
       - "SERVER_ADDR=:7001"
       - "NATS_ADDR=nats://nats:4222"
+      - "HEART_RATE=5s"
     deploy:
       restart_policy:
         condition: on-failure
