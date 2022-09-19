@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/damianiandrea/go-process-manager/agent/internal/message"
@@ -27,6 +28,7 @@ type server struct {
 	addr   string
 	server *http.Server
 
+	agentId        string
 	processManager process.Manager
 
 	natsClient                      *nats.Client
@@ -44,6 +46,7 @@ func New(options ...Option) (*server, error) {
 		opt(s)
 	}
 
+	s.agentId = uuid.NewString()
 	s.processManager = local.NewProcessManager()
 
 	if s.natsClient != nil {
@@ -53,7 +56,7 @@ func New(options ...Option) (*server, error) {
 		return nil, ErrNoMsgPlatform
 	}
 
-	s.heartbeatScheduler = scheduler.NewHeartbeatScheduler(s.heartRate, s.processManager,
+	s.heartbeatScheduler = scheduler.NewHeartbeatScheduler(s.agentId, s.heartRate, s.processManager,
 		s.listRunningProcessesMsgProducer)
 
 	mux := http.NewServeMux()

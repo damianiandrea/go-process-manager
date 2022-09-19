@@ -3,11 +3,12 @@ package message
 import "context"
 
 type ListRunningProcessesMsgProducer interface {
-	Produce(ctx context.Context, running *RunningProcesses) error
+	Produce(ctx context.Context, processes *RunningProcesses) error
 }
 
 type RunningProcesses struct {
-	Running []*Process `json:"running"`
+	AgentId   string     `json:"agent_id"`
+	Processes []*Process `json:"processes"`
 }
 
 type Process struct {

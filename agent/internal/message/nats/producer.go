@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/damianiandrea/go-process-manager/agent/internal/message"
@@ -17,12 +18,12 @@ func NewListRunningProcessesMsgProducer(client *Client) *ListRunningProcessesMsg
 	return &ListRunningProcessesMsgProducer{client: client}
 }
 
-func (p *ListRunningProcessesMsgProducer) Produce(_ context.Context, running *message.RunningProcesses) error {
+func (p *ListRunningProcessesMsgProducer) Produce(_ context.Context, processes *message.RunningProcesses) error {
 	buffer := bytes.Buffer{}
-	if err := json.NewEncoder(&buffer).Encode(running); err != nil {
+	if err := json.NewEncoder(&buffer).Encode(processes); err != nil {
 		return err
 	}
-	if err := p.client.conn.Publish("agent.x.process", buffer.Bytes()); err != nil { // TODO: x = agent_id
+	if err := p.client.conn.Publish(fmt.Sprintf("agent.%s.processes", processes.AgentId), buffer.Bytes()); err != nil {
 		log.Printf("could not publish message: %v", err)
 		return err
 	}

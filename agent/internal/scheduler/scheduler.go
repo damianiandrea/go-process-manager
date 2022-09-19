@@ -10,14 +10,16 @@ import (
 )
 
 type HeartbeatScheduler struct {
+	agentId        string
 	heartRate      time.Duration
 	processManager process.Manager
 	msgProducer    message.ListRunningProcessesMsgProducer
 }
 
-func NewHeartbeatScheduler(heartRate time.Duration, processManager process.Manager,
+func NewHeartbeatScheduler(agentId string, heartRate time.Duration, processManager process.Manager,
 	msgProducer message.ListRunningProcessesMsgProducer) *HeartbeatScheduler {
-	return &HeartbeatScheduler{heartRate: heartRate, processManager: processManager, msgProducer: msgProducer}
+	return &HeartbeatScheduler{agentId: agentId, heartRate: heartRate, processManager: processManager,
+		msgProducer: msgProducer}
 }
 
 func (s *HeartbeatScheduler) Beat(ctx context.Context) error {
@@ -32,7 +34,8 @@ func (s *HeartbeatScheduler) Beat(ctx context.Context) error {
 			for _, p := range processes {
 				running = append(running, &message.Process{Pid: p.Pid})
 			}
-			if err := s.msgProducer.Produce(ctx, &message.RunningProcesses{Running: running}); err != nil {
+			runningProcessesMsg := &message.RunningProcesses{AgentId: s.agentId, Processes: running}
+			if err := s.msgProducer.Produce(ctx, runningProcessesMsg); err != nil {
 				log.Printf("could not send heartbeat: %v", err)
 			}
 		}
