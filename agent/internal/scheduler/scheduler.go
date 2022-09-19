@@ -36,7 +36,7 @@ func (s *HeartbeatScheduler) Beat(ctx context.Context) error {
 			}
 			running := make([]*message.Process, 0)
 			for _, p := range processes {
-				running = append(running, &message.Process{Pid: p.Pid})
+				running = append(running, &message.Process{Pid: p.Pid, ProcessUuid: p.ProcessUuid})
 			}
 			runningProcessesMsg := &message.RunningProcesses{AgentId: s.agentId, Processes: running}
 			if err := s.msgProducer.Produce(ctx, runningProcessesMsg); err != nil {

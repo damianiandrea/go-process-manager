@@ -12,5 +12,6 @@ type RunningProcesses struct {
 }
 
 type Process struct {
-	Pid int `json:"pid"`
+	Pid         int    `json:"pid"`
+	ProcessUuid string `json:"process_uuid"`
 }
