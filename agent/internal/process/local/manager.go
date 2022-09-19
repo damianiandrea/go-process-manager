@@ -17,14 +17,14 @@ func NewProcessManager() *ProcessManager {
 	return &ProcessManager{running: make(map[int]struct{})}
 }
 
-func (m *ProcessManager) ListRunning() []*process.Process {
+func (m *ProcessManager) ListRunning() ([]*process.Process, error) {
 	processes := make([]*process.Process, 0)
 	m.mu.RLock()
 	for pid := range m.running {
 		processes = append(processes, &process.Process{Pid: pid})
 	}
 	m.mu.RUnlock()
-	return processes
+	return processes, nil
 }
 
 func (m *ProcessManager) Run(process string, args ...string) error {

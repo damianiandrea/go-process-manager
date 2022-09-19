@@ -29,7 +29,11 @@ func (s *HeartbeatScheduler) Beat(ctx context.Context) error {
 			log.Printf("stopping heartbeat: %v", ctx.Err())
 			return ctx.Err()
 		case <-time.After(s.heartRate):
-			processes := s.processManager.ListRunning()
+			processes, err := s.processManager.ListRunning()
+			if err != nil {
+				log.Printf("could not get list of running processes: %v", err)
+				continue
+			}
 			running := make([]*message.Process, 0)
 			for _, p := range processes {
 				running = append(running, &message.Process{Pid: p.Pid})

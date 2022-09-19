@@ -1,7 +1,7 @@
 package process
 
 type Manager interface {
-	ListRunning() []*Process
+	ListRunning() ([]*Process, error)
 	Run(process string, args ...string) error
 }
 
