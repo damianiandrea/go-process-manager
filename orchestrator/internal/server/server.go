@@ -23,8 +23,9 @@ type server struct {
 	addr   string
 	server *http.Server
 
-	natsClient            *nats.Client
-	runProcessMsgProducer message.RunProcessMsgProducer
+	natsClient                      *nats.Client
+	runProcessMsgProducer           message.RunProcessMsgProducer
+	listRunningProcessesMsgConsumer message.ListRunningProcessesMsgConsumer
 }
 
 func New(options ...Option) (*server, error) {
@@ -36,6 +37,7 @@ func New(options ...Option) (*server, error) {
 
 	if s.natsClient != nil {
 		s.runProcessMsgProducer = nats.NewRunProcessMsgProducer(s.natsClient)
+		s.listRunningProcessesMsgConsumer = nats.NewListRunningProcessesMsgConsumer(s.natsClient)
 	} else {
 		return nil, ErrNoMsgPlatform
 	}
@@ -65,6 +67,11 @@ func (s *server) Run() error {
 	group.Go(func() error {
 		log.Printf("listening on %v\n", s.server.Addr)
 		return s.server.ListenAndServe()
+	})
+
+	group.Go(func() error {
+		log.Println("ready to consume messages...")
+		return s.listRunningProcessesMsgConsumer.Consume(groupCtx)
 	})
 
 	group.Go(func() error {

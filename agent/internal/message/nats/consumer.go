@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"log"
 
+	"github.com/nats-io/nats.go"
+
 	"github.com/damianiandrea/go-process-manager/agent/internal/message"
 	"github.com/damianiandrea/go-process-manager/agent/internal/process"
-	"github.com/nats-io/nats.go"
 )
 
 type RunProcessMsgConsumer struct {
