@@ -7,4 +7,4 @@ tasks:
   stop:
     cmds:
       - docker-compose down -v --remove-orphans
-      - echo "y" | docker image prune
+      - docker image prune -f

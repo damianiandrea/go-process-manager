@@ -22,7 +22,7 @@ func NewListRunningProcessesMsgConsumer(client *Client) *ListRunningProcessesMsg
 func (c *ListRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
 	ch := make(chan *nats.Msg, 64)
 	defer close(ch)
-	sub, err := c.client.conn.ChanQueueSubscribe("agent.*.processes", "orchestrator", ch)
+	sub, err := c.client.conn.ChanSubscribe("agent.*.processes", ch)
 	if err != nil {
 		return err
 	}
@@ -35,8 +35,8 @@ func (c *ListRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
 		case msg := <-ch:
 			data := msg.Data
 			log.Printf("received message: %v", string(data))
-			run := &message.RunningProcesses{}
-			if err = json.NewDecoder(bytes.NewReader(data)).Decode(run); err != nil {
+			processes := &message.RunningProcesses{}
+			if err = json.NewDecoder(bytes.NewReader(data)).Decode(processes); err != nil {
 				log.Printf("could not decode message: %v", err)
 				continue
 			}
