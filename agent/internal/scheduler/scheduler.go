@@ -38,7 +38,8 @@ func (s *HeartbeatScheduler) Beat(ctx context.Context) error {
 			for _, p := range processes {
 				running = append(running, &message.Process{Pid: p.Pid, ProcessUuid: p.ProcessUuid})
 			}
-			runningProcessesMsg := &message.RunningProcesses{AgentId: s.agentId, Processes: running}
+			ts := time.Now().UnixMilli()
+			runningProcessesMsg := &message.RunningProcesses{AgentId: s.agentId, Processes: running, Timestamp: ts}
 			if err := s.msgProducer.Produce(ctx, runningProcessesMsg); err != nil {
 				log.Printf("could not send heartbeat: %v", err)
 			}
