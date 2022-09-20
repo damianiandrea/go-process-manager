@@ -10,15 +10,15 @@ import (
 	"github.com/damianiandrea/go-process-manager/agent/internal/message"
 )
 
-type ListRunningProcessesMsgProducer struct {
+type listRunningProcessesMsgProducer struct {
 	client *Client
 }
 
-func NewListRunningProcessesMsgProducer(client *Client) *ListRunningProcessesMsgProducer {
-	return &ListRunningProcessesMsgProducer{client: client}
+func NewListRunningProcessesMsgProducer(client *Client) *listRunningProcessesMsgProducer {
+	return &listRunningProcessesMsgProducer{client: client}
 }
 
-func (p *ListRunningProcessesMsgProducer) Produce(_ context.Context, processes *message.RunningProcesses) error {
+func (p *listRunningProcessesMsgProducer) Produce(_ context.Context, processes *message.RunningProcesses) error {
 	buffer := bytes.Buffer{}
 	if err := json.NewEncoder(&buffer).Encode(processes); err != nil {
 		return err

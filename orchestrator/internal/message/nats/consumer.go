@@ -11,15 +11,15 @@ import (
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/message"
 )
 
-type ListRunningProcessesMsgConsumer struct {
+type listRunningProcessesMsgConsumer struct {
 	client *Client
 }
 
-func NewListRunningProcessesMsgConsumer(client *Client) *ListRunningProcessesMsgConsumer {
-	return &ListRunningProcessesMsgConsumer{client: client}
+func NewListRunningProcessesMsgConsumer(client *Client) *listRunningProcessesMsgConsumer {
+	return &listRunningProcessesMsgConsumer{client: client}
 }
 
-func (c *ListRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
+func (c *listRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
 	ch := make(chan *nats.Msg, 64)
 	defer close(ch)
 	sub, err := c.client.conn.ChanSubscribe("agent.*.processes", ch)

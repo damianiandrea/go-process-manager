@@ -12,16 +12,16 @@ import (
 	"github.com/damianiandrea/go-process-manager/agent/internal/process"
 )
 
-type RunProcessMsgConsumer struct {
+type runProcessMsgConsumer struct {
 	client         *Client
 	processManager process.Manager
 }
 
-func NewRunProcessMsgConsumer(client *Client, processManager process.Manager) *RunProcessMsgConsumer {
-	return &RunProcessMsgConsumer{client: client, processManager: processManager}
+func NewRunProcessMsgConsumer(client *Client, processManager process.Manager) *runProcessMsgConsumer {
+	return &runProcessMsgConsumer{client: client, processManager: processManager}
 }
 
-func (c *RunProcessMsgConsumer) Consume(ctx context.Context) error {
+func (c *runProcessMsgConsumer) Consume(ctx context.Context) error {
 	ch := make(chan *nats.Msg, 64)
 	defer close(ch)
 	sub, err := c.client.conn.ChanQueueSubscribe("process.run", "agent", ch)

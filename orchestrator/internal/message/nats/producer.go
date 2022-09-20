@@ -9,15 +9,15 @@ import (
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/message"
 )
 
-type RunProcessMsgProducer struct {
+type runProcessMsgProducer struct {
 	client *Client
 }
 
-func NewRunProcessMsgProducer(client *Client) *RunProcessMsgProducer {
-	return &RunProcessMsgProducer{client: client}
+func NewRunProcessMsgProducer(client *Client) *runProcessMsgProducer {
+	return &runProcessMsgProducer{client: client}
 }
 
-func (p *RunProcessMsgProducer) Produce(_ context.Context, run *message.RunProcess) error {
+func (p *runProcessMsgProducer) Produce(_ context.Context, run *message.RunProcess) error {
 	buffer := bytes.Buffer{}
 	if err := json.NewEncoder(&buffer).Encode(run); err != nil {
 		return err

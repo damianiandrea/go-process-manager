@@ -9,16 +9,16 @@ import (
 	"github.com/damianiandrea/go-process-manager/agent/internal/process"
 )
 
-type ProcessManager struct {
+type processManager struct {
 	running map[int]*process.Process
 	mu      sync.RWMutex
 }
 
-func NewProcessManager() *ProcessManager {
-	return &ProcessManager{running: make(map[int]*process.Process)}
+func NewProcessManager() *processManager {
+	return &processManager{running: make(map[int]*process.Process)}
 }
 
-func (m *ProcessManager) ListRunning() ([]*process.Process, error) {
+func (m *processManager) ListRunning() ([]*process.Process, error) {
 	processes := make([]*process.Process, 0)
 	m.mu.RLock()
 	for _, proc := range m.running {
@@ -28,7 +28,7 @@ func (m *ProcessManager) ListRunning() ([]*process.Process, error) {
 	return processes, nil
 }
 
-func (m *ProcessManager) Run(processName string, args ...string) error {
+func (m *processManager) Run(processName string, args ...string) error {
 	cmd := exec.Command(processName, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -42,7 +42,7 @@ func (m *ProcessManager) Run(processName string, args ...string) error {
 	return nil
 }
 
-func (m *ProcessManager) cleanupOnProcessExit(process *os.Process) {
+func (m *processManager) cleanupOnProcessExit(process *os.Process) {
 	_, _ = process.Wait()
 	m.mu.Lock()
 	delete(m.running, process.Pid)

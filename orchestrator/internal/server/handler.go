@@ -36,7 +36,7 @@ func (h *runProcessHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *runProcessHandler) runProcess(w http.ResponseWriter, r *http.Request) {
-	request := &RunProcessRequest{}
+	request := &runProcessRequest{}
 	if err := json.NewDecoder(r.Body).Decode(request); err != nil {
 		writeJsonError(w, http.StatusBadRequest, ErrInvalidRequestBody)
 		return
@@ -51,7 +51,7 @@ func (h *runProcessHandler) runProcess(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-type RunProcessRequest struct {
+type runProcessRequest struct {
 	ProcessName string   `json:"process_name"`
 	Args        []string `json:"args,omitempty"`
 }
