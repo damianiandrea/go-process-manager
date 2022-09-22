@@ -9,20 +9,22 @@ import (
 	"github.com/damianiandrea/go-process-manager/agent/internal/process"
 )
 
-type HeartbeatScheduler struct {
+type Heartbeat struct {
+	heartRate time.Duration
+
 	agentId        string
-	heartRate      time.Duration
 	processManager process.Manager
-	msgProducer    message.ListRunningProcessesMsgProducer
+
+	msgProducer message.ListRunningProcessesMsgProducer
 }
 
-func NewHeartbeatScheduler(agentId string, heartRate time.Duration, processManager process.Manager,
-	msgProducer message.ListRunningProcessesMsgProducer) *HeartbeatScheduler {
-	return &HeartbeatScheduler{agentId: agentId, heartRate: heartRate, processManager: processManager,
+func NewHeartbeat(heartRate time.Duration, agentId string, processManager process.Manager,
+	msgProducer message.ListRunningProcessesMsgProducer) *Heartbeat {
+	return &Heartbeat{heartRate: heartRate, agentId: agentId, processManager: processManager,
 		msgProducer: msgProducer}
 }
 
-func (s *HeartbeatScheduler) Beat(ctx context.Context) error {
+func (s *Heartbeat) Beat(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -38,8 +40,8 @@ func (s *HeartbeatScheduler) Beat(ctx context.Context) error {
 			for _, p := range processes {
 				running = append(running, &message.Process{Pid: p.Pid, ProcessUuid: p.ProcessUuid})
 			}
-			ts := time.Now().UnixMilli()
-			runningProcessesMsg := &message.RunningProcesses{AgentId: s.agentId, Processes: running, Timestamp: ts}
+			now := time.Now().UnixMilli()
+			runningProcessesMsg := &message.RunningProcesses{AgentId: s.agentId, Processes: running, Timestamp: now}
 			if err := s.msgProducer.Produce(ctx, runningProcessesMsg); err != nil {
 				log.Printf("could not send heartbeat: %v", err)
 			}

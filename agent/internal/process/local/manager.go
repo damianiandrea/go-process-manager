@@ -21,8 +21,8 @@ func NewProcessManager() *processManager {
 func (m *processManager) ListRunning() ([]*process.Process, error) {
 	processes := make([]*process.Process, 0)
 	m.mu.RLock()
-	for _, proc := range m.running {
-		processes = append(processes, &process.Process{Pid: proc.Pid, ProcessUuid: proc.ProcessUuid})
+	for _, p := range m.running {
+		processes = append(processes, &process.Process{Pid: p.Pid, ProcessUuid: p.ProcessUuid})
 	}
 	m.mu.RUnlock()
 	return processes, nil

@@ -36,7 +36,7 @@ type server struct {
 	listRunningProcessesMsgProducer message.ListRunningProcessesMsgProducer
 
 	heartRate          time.Duration
-	heartbeatScheduler *scheduler.HeartbeatScheduler
+	heartbeatScheduler *scheduler.Heartbeat
 }
 
 func New(options ...Option) (*server, error) {
@@ -56,7 +56,7 @@ func New(options ...Option) (*server, error) {
 		return nil, ErrNoMsgPlatform
 	}
 
-	s.heartbeatScheduler = scheduler.NewHeartbeatScheduler(s.agentId, s.heartRate, s.processManager,
+	s.heartbeatScheduler = scheduler.NewHeartbeat(s.heartRate, s.agentId, s.processManager,
 		s.listRunningProcessesMsgProducer)
 
 	mux := http.NewServeMux()
