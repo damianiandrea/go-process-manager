@@ -34,6 +34,7 @@ type server struct {
 	natsClient                      *nats.Client
 	runProcessMsgConsumer           message.RunProcessMsgConsumer
 	listRunningProcessesMsgProducer message.ListRunningProcessesMsgProducer
+	processOutputMsgProducer        message.ProcessOutputMsgProducer
 
 	heartRate          time.Duration
 	heartbeatScheduler *scheduler.Heartbeat
@@ -47,17 +48,17 @@ func New(options ...Option) (*server, error) {
 	}
 
 	s.agentId = uuid.NewString()
-	s.processManager = local.NewProcessManager()
 
 	if s.natsClient != nil {
+		s.processOutputMsgProducer = nats.NewProcessOutputMsgProducer(s.agentId, s.natsClient)
+		s.processManager = local.NewProcessManager(s.processOutputMsgProducer)
 		s.runProcessMsgConsumer = nats.NewRunProcessMsgConsumer(s.natsClient, s.processManager)
-		s.listRunningProcessesMsgProducer = nats.NewListRunningProcessesMsgProducer(s.natsClient)
+		s.listRunningProcessesMsgProducer = nats.NewListRunningProcessesMsgProducer(s.agentId, s.natsClient)
 	} else {
 		return nil, ErrNoMsgPlatform
 	}
 
-	s.heartbeatScheduler = scheduler.NewHeartbeat(s.heartRate, s.agentId, s.processManager,
-		s.listRunningProcessesMsgProducer)
+	s.heartbeatScheduler = scheduler.NewHeartbeat(s.heartRate, s.processManager, s.listRunningProcessesMsgProducer)
 
 	mux := http.NewServeMux()
 	mux.Handle("/health", recoverer(&healthHandler{}))

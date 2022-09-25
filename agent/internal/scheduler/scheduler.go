@@ -12,16 +12,14 @@ import (
 type Heartbeat struct {
 	heartRate time.Duration
 
-	agentId        string
 	processManager process.Manager
 
 	msgProducer message.ListRunningProcessesMsgProducer
 }
 
-func NewHeartbeat(heartRate time.Duration, agentId string, processManager process.Manager,
+func NewHeartbeat(heartRate time.Duration, processManager process.Manager,
 	msgProducer message.ListRunningProcessesMsgProducer) *Heartbeat {
-	return &Heartbeat{heartRate: heartRate, agentId: agentId, processManager: processManager,
-		msgProducer: msgProducer}
+	return &Heartbeat{heartRate: heartRate, processManager: processManager, msgProducer: msgProducer}
 }
 
 func (s *Heartbeat) Beat(ctx context.Context) error {
@@ -41,7 +39,7 @@ func (s *Heartbeat) Beat(ctx context.Context) error {
 				running = append(running, &message.Process{Pid: p.Pid, ProcessUuid: p.ProcessUuid})
 			}
 			now := time.Now().UnixMilli()
-			runningProcessesMsg := &message.RunningProcesses{AgentId: s.agentId, Processes: running, Timestamp: now}
+			runningProcessesMsg := &message.RunningProcesses{Processes: running, Timestamp: now}
 			if err := s.msgProducer.Produce(ctx, runningProcessesMsg); err != nil {
 				log.Printf("could not send heartbeat: %v", err)
 			}

@@ -42,7 +42,7 @@ func (c *runProcessMsgConsumer) Consume(ctx context.Context) error {
 				log.Printf("could not decode message: %v", err)
 				continue
 			}
-			if err = c.processManager.Run(run.ProcessName, run.Args...); err != nil {
+			if err = c.processManager.Run(ctx, run.ProcessName, run.Args...); err != nil {
 				log.Printf("could not run process: %v", err)
 			}
 		}
