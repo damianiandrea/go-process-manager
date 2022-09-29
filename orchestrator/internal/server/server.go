@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/gorilla/mux"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/message"
@@ -42,15 +43,17 @@ func New(options ...Option) (*server, error) {
 		return nil, ErrNoMsgPlatform
 	}
 
-	mux := http.NewServeMux()
-	mux.Handle("/health", recoverer(&healthHandler{}))
-	mux.Handle("/v1/processes/run", recoverer(newRunProcessHandler(s.runProcessMsgProducer)))
+	r := mux.NewRouter()
+	r.Use(recoverer)
+	r.Handle("/health", &healthHandler{}).Methods(http.MethodGet)
+
+	r.Handle("/v1/processes", newRunProcessHandler(s.runProcessMsgProducer)).Methods(http.MethodPost)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	s.server = &http.Server{
 		Addr:    s.addr,
-		Handler: mux,
+		Handler: r,
 		BaseContext: func(l net.Listener) context.Context {
 			return ctx
 		},

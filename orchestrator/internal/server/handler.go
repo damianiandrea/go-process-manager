@@ -8,10 +8,7 @@ import (
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/message"
 )
 
-var (
-	ErrMethodNotAllowed   = errors.New("method not allowed")
-	ErrInvalidRequestBody = errors.New("invalid request body")
-)
+var ErrInvalidRequestBody = errors.New("invalid request body")
 
 type runProcessHandler struct {
 	runProcessMsgProducer message.RunProcessMsgProducer
@@ -22,20 +19,6 @@ func newRunProcessHandler(producer message.RunProcessMsgProducer) *runProcessHan
 }
 
 func (h *runProcessHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodPost:
-		h.runProcess(w, r)
-	default:
-		setAllowHeader(w, http.MethodOptions, http.MethodPost)
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		writeJsonError(w, http.StatusMethodNotAllowed, ErrMethodNotAllowed)
-	}
-}
-
-func (h *runProcessHandler) runProcess(w http.ResponseWriter, r *http.Request) {
 	request := &runProcessRequest{}
 	if err := json.NewDecoder(r.Body).Decode(request); err != nil {
 		writeJsonError(w, http.StatusBadRequest, ErrInvalidRequestBody)
