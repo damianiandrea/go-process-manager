@@ -49,15 +49,16 @@ func newListRunningProcessesHandler(processStore storage.ProcessStore) *listRunn
 }
 
 func (h *listRunningProcessesHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
-	storedProcesses, err := h.processStore.GetAll()
+	runningProcesses, err := h.processStore.GetAll()
 	if err != nil {
 		writeJsonError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	processes := make([]process, 0)
-	for _, p := range storedProcesses {
-		processes = append(processes, process{Pid: p.Pid, ProcessUuid: p.ProcessUuid, AgentId: p.AgentId, LastSeen: p.LastSeen})
+	for _, p := range runningProcesses {
+		processes = append(processes, process{Pid: p.Pid, ProcessUuid: p.ProcessUuid, AgentId: p.AgentId,
+			LastSeen: p.LastSeen})
 	}
 	response := listRunningProcessesResponse{Data: processes}
 	writeJson(w, http.StatusOK, response)
