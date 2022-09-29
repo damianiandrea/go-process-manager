@@ -18,6 +18,14 @@ func NewClient(url string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	_, err = js.AddStream(&nats.StreamConfig{
+		Name:     "PROCESS_OUTPUTS",
+		Subjects: []string{"agent.*.processes.*.output"},
+		Storage:  nats.FileStorage,
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
 		conn: conn,
 		js:   js,

@@ -51,5 +51,6 @@ func (p *processOutputMsgProducer) Produce(_ context.Context, output *message.Pr
 		log.Printf("could not publish message: %v", err)
 		return err
 	}
+	log.Printf("published message: %v", string(output.Data))
 	return nil
 }
