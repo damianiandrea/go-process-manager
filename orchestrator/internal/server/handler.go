@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/message"
+	"github.com/damianiandrea/go-process-manager/orchestrator/internal/storage"
 )
 
 var ErrInvalidRequestBody = errors.New("invalid request body")
@@ -37,6 +38,40 @@ func (h *runProcessHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type runProcessRequest struct {
 	ProcessName string   `json:"process_name"`
 	Args        []string `json:"args,omitempty"`
+}
+
+type listRunningProcessesHandler struct {
+	processStore storage.ProcessStore
+}
+
+func newListRunningProcessesHandler(processStore storage.ProcessStore) *listRunningProcessesHandler {
+	return &listRunningProcessesHandler{processStore: processStore}
+}
+
+func (h *listRunningProcessesHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	storedProcesses, err := h.processStore.GetAll()
+	if err != nil {
+		writeJsonError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	processes := make([]process, 0)
+	for _, p := range storedProcesses {
+		processes = append(processes, process{Pid: p.Pid, ProcessUuid: p.ProcessUuid, AgentId: p.AgentId, LastSeen: p.LastSeen})
+	}
+	response := listRunningProcessesResponse{Data: processes}
+	writeJson(w, http.StatusOK, response)
+}
+
+type listRunningProcessesResponse struct {
+	Data []process `json:"data"`
+}
+
+type process struct {
+	Pid         int    `json:"pid"`
+	ProcessUuid string `json:"process_uuid"`
+	AgentId     string `json:"agent_id"`
+	LastSeen    int64  `json:"last_seen"`
 }
 
 type healthHandler struct {

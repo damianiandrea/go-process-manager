@@ -9,14 +9,16 @@ import (
 	"github.com/nats-io/nats.go"
 
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/message"
+	"github.com/damianiandrea/go-process-manager/orchestrator/internal/storage"
 )
 
 type listRunningProcessesMsgConsumer struct {
-	client *Client
+	client       *Client
+	processStore storage.ProcessStore
 }
 
-func NewListRunningProcessesMsgConsumer(client *Client) *listRunningProcessesMsgConsumer {
-	return &listRunningProcessesMsgConsumer{client: client}
+func NewListRunningProcessesMsgConsumer(client *Client, processStore storage.ProcessStore) *listRunningProcessesMsgConsumer {
+	return &listRunningProcessesMsgConsumer{client: client, processStore: processStore}
 }
 
 func (c *listRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
@@ -35,10 +37,18 @@ func (c *listRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
 		case msg := <-ch:
 			data := msg.Data
 			log.Printf("received message: %v", string(data))
-			processes := &message.RunningProcesses{}
-			if err = json.NewDecoder(bytes.NewReader(data)).Decode(processes); err != nil {
+			processesMsg := &message.RunningProcesses{}
+			if err = json.NewDecoder(bytes.NewReader(data)).Decode(processesMsg); err != nil {
 				log.Printf("could not decode message: %v", err)
 				continue
+			}
+			processes := make([]storage.Process, 0)
+			for _, p := range processesMsg.Processes {
+				processes = append(processes, storage.Process{Pid: p.Pid, ProcessUuid: p.ProcessUuid,
+					AgentId: processesMsg.AgentId, LastSeen: processesMsg.Timestamp})
+			}
+			if err = c.processStore.Put(processesMsg.AgentId, processes); err != nil {
+				log.Printf("could not store running processes: %v", err)
 			}
 		}
 	}

@@ -14,6 +14,8 @@ import (
 
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/message"
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/message/nats"
+	"github.com/damianiandrea/go-process-manager/orchestrator/internal/storage"
+	"github.com/damianiandrea/go-process-manager/orchestrator/internal/storage/inmem"
 )
 
 var ErrNoMsgPlatform = errors.New("no message platform")
@@ -23,6 +25,8 @@ type server struct {
 	stop   context.CancelFunc
 	addr   string
 	server *http.Server
+
+	processStore storage.ProcessStore
 
 	natsClient                      *nats.Client
 	runProcessMsgProducer           message.RunProcessMsgProducer
@@ -36,18 +40,22 @@ func New(options ...Option) (*server, error) {
 		opt(s)
 	}
 
+	s.processStore = inmem.NewProcessStore()
+
 	if s.natsClient != nil {
 		s.runProcessMsgProducer = nats.NewRunProcessMsgProducer(s.natsClient)
-		s.listRunningProcessesMsgConsumer = nats.NewListRunningProcessesMsgConsumer(s.natsClient)
+		s.listRunningProcessesMsgConsumer = nats.NewListRunningProcessesMsgConsumer(s.natsClient, s.processStore)
 	} else {
 		return nil, ErrNoMsgPlatform
 	}
 
 	r := mux.NewRouter()
 	r.Use(recoverer)
-	r.Handle("/health", &healthHandler{}).Methods(http.MethodGet)
+	r.Path("/health").Methods(http.MethodGet).Handler(&healthHandler{})
 
-	r.Handle("/v1/processes", newRunProcessHandler(s.runProcessMsgProducer)).Methods(http.MethodPost)
+	sr := r.Path("/v1/processes").Subrouter()
+	sr.Methods(http.MethodPost).Handler(newRunProcessHandler(s.runProcessMsgProducer))
+	sr.Methods(http.MethodGet).Handler(newListRunningProcessesHandler(s.processStore))
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
