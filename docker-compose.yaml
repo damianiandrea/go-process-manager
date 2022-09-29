@@ -69,16 +69,12 @@ services:
     command: "--name nats1 --cluster_name NATS --js --sd /data --cluster nats://0.0.0.0:6222 --routes nats://nats:6222,nats://nats2:6222"
     networks:
       - process-manager-net
-    depends_on:
-      - nats
   nats2:
     image: nats
     container_name: nats2
     command: "--name nats2 --cluster_name NATS --js --sd /data --cluster nats://0.0.0.0:6222 --routes nats://nats:6222,nats://nats1:6222"
     networks:
       - process-manager-net
-    depends_on:
-      - nats
 
 networks:
   process-manager-net:
