@@ -63,8 +63,6 @@ services:
     command: "--name nats --cluster_name NATS --js --sd /data --cluster nats://0.0.0.0:6222 --routes nats://nats1:6222,nats://nats2:6222 --http_port 8222"
     networks:
       - process-manager-net
-    depends_on:
-      - nats
   nats1:
     image: nats
     container_name: nats1
