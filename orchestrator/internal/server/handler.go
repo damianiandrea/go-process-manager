@@ -93,7 +93,9 @@ func (h *processOutputHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		writeJsonError(w, http.StatusInternalServerError, err)
 		return
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	ctx := r.Context()
 	outputCh := make(chan []byte, 64)
