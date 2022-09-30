@@ -31,6 +31,7 @@ type server struct {
 	natsClient                      *nats.Client
 	runProcessMsgProducer           message.RunProcessMsgProducer
 	listRunningProcessesMsgConsumer message.ListRunningProcessesMsgConsumer
+	processOutputMsgConsumer        message.ProcessOutputMsgConsumer
 }
 
 func New(options ...Option) (*server, error) {
@@ -45,6 +46,7 @@ func New(options ...Option) (*server, error) {
 	if s.natsClient != nil {
 		s.runProcessMsgProducer = nats.NewRunProcessMsgProducer(s.natsClient)
 		s.listRunningProcessesMsgConsumer = nats.NewListRunningProcessesMsgConsumer(s.natsClient, s.processStore)
+		s.processOutputMsgConsumer = nats.NewProcessOutputMsgConsumer(s.natsClient)
 	} else {
 		return nil, ErrNoMsgPlatform
 	}
@@ -53,9 +55,9 @@ func New(options ...Option) (*server, error) {
 	r.Use(recoverer)
 	r.Path("/health").Methods(http.MethodGet).Handler(&healthHandler{})
 
-	sr := r.Path("/v1/processes").Subrouter()
-	sr.Methods(http.MethodPost).Handler(newRunProcessHandler(s.runProcessMsgProducer))
-	sr.Methods(http.MethodGet).Handler(newListRunningProcessesHandler(s.processStore))
+	r.Path("/v1/processes").Methods(http.MethodPost).Handler(newRunProcessHandler(s.runProcessMsgProducer))
+	r.Path("/v1/processes").Methods(http.MethodGet).Handler(newListRunningProcessesHandler(s.processStore))
+	r.Path("/v1/processes/{processUuid}/logs").Methods(http.MethodGet).Handler(newProcessOutputHandler(s.processOutputMsgConsumer))
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 

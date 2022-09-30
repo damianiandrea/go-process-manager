@@ -6,6 +6,7 @@ import (
 
 type Client struct {
 	conn *nats.Conn
+	js   nats.JetStreamContext
 }
 
 func NewClient(url string) (*Client, error) {
@@ -13,8 +14,13 @@ func NewClient(url string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	js, err := conn.JetStream()
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
 		conn: conn,
+		js:   js,
 	}, nil
 }
 

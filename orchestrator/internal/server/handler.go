@@ -5,6 +5,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
+
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/message"
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/storage"
 )
@@ -73,6 +76,49 @@ type process struct {
 	ProcessUuid string `json:"process_uuid"`
 	AgentId     string `json:"agent_id"`
 	LastSeen    int64  `json:"last_seen"`
+}
+
+type processOutputHandler struct {
+	upgrader    websocket.Upgrader
+	msgConsumer message.ProcessOutputMsgConsumer
+}
+
+func newProcessOutputHandler(msgConsumer message.ProcessOutputMsgConsumer) *processOutputHandler {
+	return &processOutputHandler{upgrader: websocket.Upgrader{}, msgConsumer: msgConsumer}
+}
+
+func (h *processOutputHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	conn, err := h.upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		writeJsonError(w, http.StatusInternalServerError, err)
+		return
+	}
+	defer conn.Close()
+
+	ctx := r.Context()
+	outputCh := make(chan []byte, 64)
+	defer close(outputCh)
+	if err = h.msgConsumer.ChanConsume(ctx, mux.Vars(r)["processUuid"], outputCh); err != nil {
+		return
+	}
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				_ = conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+				return
+			case msg := <-outputCh:
+				_ = conn.WriteMessage(websocket.TextMessage, msg)
+			}
+		}
+	}()
+
+	for {
+		if _, _, err := conn.ReadMessage(); err != nil {
+			return
+		}
+	}
 }
 
 type healthHandler struct {

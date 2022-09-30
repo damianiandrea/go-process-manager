@@ -16,3 +16,7 @@ type Process struct {
 	Pid         int    `json:"pid"`
 	ProcessUuid string `json:"process_uuid"`
 }
+
+type ProcessOutputMsgConsumer interface {
+	ChanConsume(ctx context.Context, processUuid string, outputCh chan []byte) error
+}

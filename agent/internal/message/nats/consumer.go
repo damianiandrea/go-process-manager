@@ -22,9 +22,9 @@ func NewRunProcessMsgConsumer(client *Client, processManager process.Manager) *r
 }
 
 func (c *runProcessMsgConsumer) Consume(ctx context.Context) error {
-	ch := make(chan *nats.Msg, 64)
-	defer close(ch)
-	sub, err := c.client.conn.ChanQueueSubscribe("process.run", "agent", ch)
+	msgCh := make(chan *nats.Msg, 64)
+	defer close(msgCh)
+	sub, err := c.client.conn.ChanQueueSubscribe("process.run", "agent", msgCh)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (c *runProcessMsgConsumer) Consume(ctx context.Context) error {
 		case <-ctx.Done():
 			log.Printf("unsubscribing and draining messages: %v", ctx.Err())
 			return sub.Drain()
-		case msg := <-ch:
+		case msg := <-msgCh:
 			data := msg.Data
 			log.Printf("received message: %v", string(data))
 			run := &message.RunProcess{}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/nats-io/nats.go"
@@ -22,9 +23,9 @@ func NewListRunningProcessesMsgConsumer(client *Client, processStore storage.Pro
 }
 
 func (c *listRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
-	ch := make(chan *nats.Msg, 64)
-	defer close(ch)
-	sub, err := c.client.conn.ChanSubscribe("agent.*.processes", ch)
+	msgCh := make(chan *nats.Msg, 64)
+	defer close(msgCh)
+	sub, err := c.client.conn.ChanSubscribe("agent.*.processes", msgCh)
 	if err != nil {
 		return err
 	}
@@ -34,7 +35,7 @@ func (c *listRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
 		case <-ctx.Done():
 			log.Printf("unsubscribing and draining messages: %v", ctx.Err())
 			return sub.Drain()
-		case msg := <-ch:
+		case msg := <-msgCh:
 			data := msg.Data
 			log.Printf("received message: %v", string(data))
 			processesMsg := &message.RunningProcesses{}
@@ -52,4 +53,41 @@ func (c *listRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
 			}
 		}
 	}
+}
+
+type processOutputMsgConsumer struct {
+	client *Client
+}
+
+func NewProcessOutputMsgConsumer(client *Client) *processOutputMsgConsumer {
+	return &processOutputMsgConsumer{client: client}
+}
+
+func (c *processOutputMsgConsumer) ChanConsume(ctx context.Context, processUuid string, outputCh chan []byte) error {
+	msgCh := make(chan *nats.Msg, 64)
+	subject := fmt.Sprintf("agent.*.processes.%s.output", processUuid)
+	sub, err := c.client.js.ChanSubscribe(subject, msgCh, nats.OrderedConsumer())
+	if err != nil {
+		return err
+	}
+
+	go func(*nats.Subscription) {
+		for {
+			select {
+			case <-ctx.Done():
+				log.Printf("unsubscribing: %v", ctx.Err())
+				if err := sub.Unsubscribe(); err != nil {
+					log.Printf("could not unsubscribe: %v", err)
+				}
+				close(msgCh)
+				return
+			case msg := <-msgCh:
+				data := msg.Data
+				log.Printf("received message: %v", string(data))
+				outputCh <- data
+			}
+		}
+	}(sub)
+
+	return nil
 }
