@@ -42,12 +42,11 @@ type server struct {
 
 func New(options ...Option) (*server, error) {
 	s := &server{}
+	s.agentId = uuid.NewString()
 
 	for _, opt := range options {
 		opt(s)
 	}
-
-	s.agentId = uuid.NewString()
 
 	if s.natsClient != nil {
 		s.processOutputMsgProducer = nats.NewProcessOutputMsgProducer(s.agentId, s.natsClient)
