@@ -35,10 +35,8 @@ func (c *runProcessMsgConsumer) Consume(ctx context.Context) error {
 			log.Printf("unsubscribing and draining messages: %v", ctx.Err())
 			return sub.Drain()
 		case msg := <-msgCh:
-			data := msg.Data
-			log.Printf("received message: %v", string(data))
 			run := &message.RunProcess{}
-			if err = json.NewDecoder(bytes.NewReader(data)).Decode(run); err != nil {
+			if err = json.NewDecoder(bytes.NewReader(msg.Data)).Decode(run); err != nil {
 				log.Printf("could not decode message: %v", err)
 				continue
 			}

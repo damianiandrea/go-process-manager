@@ -37,7 +37,6 @@ func (c *listRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
 			return sub.Drain()
 		case msg := <-msgCh:
 			data := msg.Data
-			log.Printf("received message: %v", string(data))
 			processesMsg := &message.RunningProcesses{}
 			if err = json.NewDecoder(bytes.NewReader(data)).Decode(processesMsg); err != nil {
 				log.Printf("could not decode message: %v", err)
@@ -75,16 +74,13 @@ func (c *processOutputMsgConsumer) ChanConsume(ctx context.Context, processUuid 
 		for {
 			select {
 			case <-ctx.Done():
-				log.Printf("unsubscribing: %v", ctx.Err())
 				if err := sub.Unsubscribe(); err != nil {
 					log.Printf("could not unsubscribe: %v", err)
 				}
 				close(msgCh)
 				return
 			case msg := <-msgCh:
-				data := msg.Data
-				log.Printf("received message: %v", string(data))
-				outputCh <- data
+				outputCh <- msg.Data
 			}
 		}
 	}(sub)

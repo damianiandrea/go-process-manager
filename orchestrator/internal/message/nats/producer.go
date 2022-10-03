@@ -26,6 +26,5 @@ func (p *runProcessMsgProducer) Produce(_ context.Context, run *message.RunProce
 		log.Printf("could not publish message: %v", err)
 		return err
 	}
-	log.Printf("published message: %v", buffer.String())
 	return nil
 }
