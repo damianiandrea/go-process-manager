@@ -51,8 +51,8 @@ func newListRunningProcessesHandler(processStore storage.ProcessStore) *listRunn
 	return &listRunningProcessesHandler{processStore: processStore}
 }
 
-func (h *listRunningProcessesHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
-	runningProcesses, err := h.processStore.GetAll()
+func (h *listRunningProcessesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	runningProcesses, err := h.processStore.GetAll(r.Context())
 	if err != nil {
 		writeJsonError(w, http.StatusInternalServerError, err)
 		return

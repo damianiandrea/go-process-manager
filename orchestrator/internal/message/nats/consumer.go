@@ -46,7 +46,7 @@ func (c *listRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
 				processes = append(processes, storage.Process{Pid: p.Pid, ProcessUuid: p.ProcessUuid,
 					AgentId: processesMsg.AgentId, LastSeen: processesMsg.Timestamp})
 			}
-			if err = c.processStore.Put(processesMsg.AgentId, processes); err != nil {
+			if err = c.processStore.Put(ctx, processesMsg.AgentId, processes); err != nil {
 				log.Printf("could not store running processes: %v", err)
 			}
 		}

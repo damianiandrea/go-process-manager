@@ -1,8 +1,10 @@
 package storage
 
+import "context"
+
 type ProcessStore interface {
-	GetAll() ([]Process, error)
-	Put(agentId string, processes []Process) error
+	GetAll(ctx context.Context) ([]Process, error)
+	Put(ctx context.Context, agentId string, processes []Process) error
 }
 
 type Process struct {

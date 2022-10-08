@@ -3,7 +3,7 @@ package process
 import "context"
 
 type Manager interface {
-	ListRunning() ([]*Process, error)
+	ListRunning(ctx context.Context) ([]*Process, error)
 	Run(ctx context.Context, processName string, args ...string) error
 }
 

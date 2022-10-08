@@ -23,7 +23,7 @@ func NewProcessManager(msgProducer message.ProcessOutputMsgProducer) *processMan
 	return &processManager{msgProducer: msgProducer, running: make(map[int]*process.Process)}
 }
 
-func (m *processManager) ListRunning() ([]*process.Process, error) {
+func (m *processManager) ListRunning(_ context.Context) ([]*process.Process, error) {
 	processes := make([]*process.Process, 0)
 	m.mu.RLock()
 	for _, p := range m.running {

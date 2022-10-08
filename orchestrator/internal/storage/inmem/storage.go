@@ -1,6 +1,7 @@
 package inmem
 
 import (
+	"context"
 	"sync"
 
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/storage"
@@ -15,7 +16,7 @@ func NewProcessStore() *ProcessStore {
 	return &ProcessStore{processesByAgent: make(map[string][]storage.Process)}
 }
 
-func (s *ProcessStore) GetAll() ([]storage.Process, error) {
+func (s *ProcessStore) GetAll(_ context.Context) ([]storage.Process, error) {
 	s.mu.RLock()
 	processes := make([]storage.Process, 0)
 	for _, agentProcesses := range s.processesByAgent {
@@ -25,7 +26,7 @@ func (s *ProcessStore) GetAll() ([]storage.Process, error) {
 	return processes, nil
 }
 
-func (s *ProcessStore) Put(agentId string, processes []storage.Process) error {
+func (s *ProcessStore) Put(_ context.Context, agentId string, processes []storage.Process) error {
 	s.mu.Lock()
 	s.processesByAgent[agentId] = processes
 	s.mu.Unlock()
