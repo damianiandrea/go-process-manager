@@ -48,11 +48,14 @@ func New(options ...Option) (*server, error) {
 		opt(s)
 	}
 
+	encoder := &message.JsonEncoder{}
+	decoder := &message.JsonDecoder{}
+
 	if s.natsClient != nil {
-		s.processOutputMsgProducer = nats.NewProcessOutputMsgProducer(s.agentId, s.natsClient)
+		s.processOutputMsgProducer = nats.NewProcessOutputMsgProducer(s.agentId, s.natsClient, encoder)
 		s.processManager = local.NewProcessManager(s.processOutputMsgProducer)
-		s.runProcessMsgConsumer = nats.NewRunProcessMsgConsumer(s.natsClient, s.processManager)
-		s.listRunningProcessesMsgProducer = nats.NewListRunningProcessesMsgProducer(s.agentId, s.natsClient)
+		s.runProcessMsgConsumer = nats.NewRunProcessMsgConsumer(s.natsClient, decoder, s.processManager)
+		s.listRunningProcessesMsgProducer = nats.NewListRunningProcessesMsgProducer(s.agentId, s.natsClient, encoder)
 	} else {
 		return nil, ErrNoMsgPlatform
 	}

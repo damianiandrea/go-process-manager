@@ -1,9 +1,7 @@
 package nats
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"log"
 
 	"github.com/nats-io/nats.go"
@@ -13,12 +11,14 @@ import (
 )
 
 type runProcessMsgConsumer struct {
-	client         *Client
+	client  *Client
+	decoder message.Decoder
+
 	processManager process.Manager
 }
 
-func NewRunProcessMsgConsumer(client *Client, processManager process.Manager) *runProcessMsgConsumer {
-	return &runProcessMsgConsumer{client: client, processManager: processManager}
+func NewRunProcessMsgConsumer(client *Client, decoder message.Decoder, processManager process.Manager) *runProcessMsgConsumer {
+	return &runProcessMsgConsumer{client: client, decoder: decoder, processManager: processManager}
 }
 
 func (c *runProcessMsgConsumer) Consume(ctx context.Context) error {
@@ -36,7 +36,7 @@ func (c *runProcessMsgConsumer) Consume(ctx context.Context) error {
 			return sub.Drain()
 		case msg := <-msgCh:
 			run := &message.RunProcess{}
-			if err = json.NewDecoder(bytes.NewReader(msg.Data)).Decode(run); err != nil {
+			if err = c.decoder.Decode(msg.Data, run); err != nil {
 				log.Printf("could not decode message: %v", err)
 				continue
 			}

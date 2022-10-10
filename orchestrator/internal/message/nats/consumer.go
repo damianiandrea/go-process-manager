@@ -1,9 +1,7 @@
 package nats
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 
@@ -14,12 +12,15 @@ import (
 )
 
 type listRunningProcessesMsgConsumer struct {
-	client       *Client
+	client  *Client
+	decoder message.Decoder
+
 	processStore storage.ProcessStore
 }
 
-func NewListRunningProcessesMsgConsumer(client *Client, processStore storage.ProcessStore) *listRunningProcessesMsgConsumer {
-	return &listRunningProcessesMsgConsumer{client: client, processStore: processStore}
+func NewListRunningProcessesMsgConsumer(client *Client, decoder message.Decoder, processStore storage.ProcessStore,
+) *listRunningProcessesMsgConsumer {
+	return &listRunningProcessesMsgConsumer{client: client, decoder: decoder, processStore: processStore}
 }
 
 func (c *listRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
@@ -37,7 +38,7 @@ func (c *listRunningProcessesMsgConsumer) Consume(ctx context.Context) error {
 			return sub.Drain()
 		case msg := <-msgCh:
 			processesMsg := &message.RunningProcesses{}
-			if err = json.NewDecoder(bytes.NewReader(msg.Data)).Decode(processesMsg); err != nil {
+			if err = c.decoder.Decode(msg.Data, processesMsg); err != nil {
 				log.Printf("could not decode message: %v", err)
 				continue
 			}

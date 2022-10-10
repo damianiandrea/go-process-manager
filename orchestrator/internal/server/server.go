@@ -42,10 +42,12 @@ func New(options ...Option) (*server, error) {
 	}
 
 	s.processStore = inmem.NewProcessStore()
+	encoder := &message.JsonEncoder{}
+	decoder := &message.JsonDecoder{}
 
 	if s.natsClient != nil {
-		s.runProcessMsgProducer = nats.NewRunProcessMsgProducer(s.natsClient)
-		s.listRunningProcessesMsgConsumer = nats.NewListRunningProcessesMsgConsumer(s.natsClient, s.processStore)
+		s.runProcessMsgProducer = nats.NewRunProcessMsgProducer(s.natsClient, encoder)
+		s.listRunningProcessesMsgConsumer = nats.NewListRunningProcessesMsgConsumer(s.natsClient, decoder, s.processStore)
 		s.processOutputMsgConsumer = nats.NewProcessOutputMsgConsumer(s.natsClient)
 	} else {
 		return nil, ErrNoMsgPlatform

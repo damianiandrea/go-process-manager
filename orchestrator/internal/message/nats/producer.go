@@ -1,28 +1,27 @@
 package nats
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"log"
 
 	"github.com/damianiandrea/go-process-manager/orchestrator/internal/message"
 )
 
 type runProcessMsgProducer struct {
-	client *Client
+	client  *Client
+	encoder message.Encoder
 }
 
-func NewRunProcessMsgProducer(client *Client) *runProcessMsgProducer {
-	return &runProcessMsgProducer{client: client}
+func NewRunProcessMsgProducer(client *Client, encoder message.Encoder) *runProcessMsgProducer {
+	return &runProcessMsgProducer{client: client, encoder: encoder}
 }
 
 func (p *runProcessMsgProducer) Produce(_ context.Context, run *message.RunProcess) error {
-	buffer := bytes.Buffer{}
-	if err := json.NewEncoder(&buffer).Encode(run); err != nil {
+	bytes, err := p.encoder.Encode(run)
+	if err != nil {
 		return err
 	}
-	if err := p.client.conn.Publish("process.run", buffer.Bytes()); err != nil {
+	if err := p.client.conn.Publish("process.run", bytes); err != nil {
 		log.Printf("could not publish message: %v", err)
 		return err
 	}

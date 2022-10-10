@@ -1,9 +1,7 @@
 package nats
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 
@@ -13,21 +11,23 @@ import (
 type listRunningProcessesMsgProducer struct {
 	agentId string
 
-	client *Client
+	client  *Client
+	encoder message.Encoder
 }
 
-func NewListRunningProcessesMsgProducer(agentId string, client *Client) *listRunningProcessesMsgProducer {
-	return &listRunningProcessesMsgProducer{agentId: agentId, client: client}
+func NewListRunningProcessesMsgProducer(agentId string, client *Client, encoder message.Encoder,
+) *listRunningProcessesMsgProducer {
+	return &listRunningProcessesMsgProducer{agentId: agentId, client: client, encoder: encoder}
 }
 
 func (p *listRunningProcessesMsgProducer) Produce(_ context.Context, processes *message.RunningProcesses) error {
 	processes.AgentId = p.agentId
-	buffer := bytes.Buffer{}
-	if err := json.NewEncoder(&buffer).Encode(processes); err != nil {
+	bytes, err := p.encoder.Encode(processes)
+	if err != nil {
 		return err
 	}
 	subject := fmt.Sprintf("agent.%s.processes", p.agentId)
-	if err := p.client.conn.Publish(subject, buffer.Bytes()); err != nil {
+	if err := p.client.conn.Publish(subject, bytes); err != nil {
 		log.Printf("could not publish message: %v", err)
 		return err
 	}
