@@ -24,6 +24,7 @@ func (p *listRunningProcessesMsgProducer) Produce(_ context.Context, processes *
 	processes.AgentId = p.agentId
 	bytes, err := p.encoder.Encode(processes)
 	if err != nil {
+		log.Printf("could not encode message: %v", err)
 		return err
 	}
 	subject := fmt.Sprintf("agent.%s.processes", p.agentId)

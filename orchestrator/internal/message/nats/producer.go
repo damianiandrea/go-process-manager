@@ -19,6 +19,7 @@ func NewRunProcessMsgProducer(client *Client, encoder message.Encoder) *runProce
 func (p *runProcessMsgProducer) Produce(_ context.Context, run *message.RunProcess) error {
 	bytes, err := p.encoder.Encode(run)
 	if err != nil {
+		log.Printf("could not encode message: %v", err)
 		return err
 	}
 	if err := p.client.conn.Publish("process.run", bytes); err != nil {
