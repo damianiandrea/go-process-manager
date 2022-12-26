@@ -70,7 +70,7 @@ func (c *processOutputMsgConsumer) ChanConsume(ctx context.Context, processUuid 
 		return err
 	}
 
-	go func(*nats.Subscription) {
+	go func(sub *nats.Subscription) {
 		for {
 			select {
 			case <-ctx.Done():
