@@ -23,16 +23,14 @@ func NewHeartbeat(heartRate time.Duration, processManager process.Manager,
 }
 
 func (s *Heartbeat) Beat(ctx context.Context) error {
-	timer := time.NewTimer(s.heartRate)
+	ticker := time.NewTicker(s.heartRate)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			log.Printf("stopping heartbeat: %v", ctx.Err())
-			if !timer.Stop() {
-				<-timer.C
-			}
 			return ctx.Err()
-		case <-timer.C:
+		case <-ticker.C:
 			processes, err := s.processManager.ListRunning(ctx)
 			if err != nil {
 				log.Printf("could not get list of running processes: %v", err)
