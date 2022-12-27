@@ -52,7 +52,7 @@ func New(options ...Option) (*server, error) {
 	decoder := &message.JsonDecoder{}
 
 	if s.natsClient != nil {
-		s.processOutputMsgProducer = nats.NewProcessOutputMsgProducer(s.agentId, s.natsClient, encoder)
+		s.processOutputMsgProducer = nats.NewProcessOutputMsgProducer(s.agentId, s.natsClient)
 		s.processManager = local.NewProcessManager(s.processOutputMsgProducer)
 		s.runProcessMsgConsumer = nats.NewRunProcessMsgConsumer(s.natsClient, decoder, s.processManager)
 		s.listRunningProcessesMsgProducer = nats.NewListRunningProcessesMsgProducer(s.agentId, s.natsClient, encoder)
